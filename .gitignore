@@ -1,0 +1,44 @@
+# Environment
+.env
+*.env
+
+# Secrets
+*.pem
+*.key
+secrets.json
+
+# Database
+*.db
+*.sqlite
+
+# Uploads & Data
+uploads/
+data/raw/
+data/processed/
+data/augmented/
+
+# Trained Models
+ai-service/models/*.pt
+ai-service/models/*.pth
+ai-service/models/*.onnx
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
