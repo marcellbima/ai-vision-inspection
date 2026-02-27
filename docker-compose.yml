@@ -2,13 +2,19 @@ services:
   ai-service:
     build: ./ai-service
     restart: always
+    volumes:
+      - uploads:/app/uploads
+      - ./ai-service/models:/app/models
 
   backend:
     build: ./backend
     env_file: .env
     depends_on:
       - postgres
+      - ai-service
     restart: always
+    volumes:
+      - uploads:/app/uploads
 
   frontend:
     build: ./frontend
@@ -16,7 +22,10 @@ services:
 
   postgres:
     image: postgres:15-alpine
-    env_file: .env
+    environment:
+      POSTGRES_DB: ai_inspection
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: always
@@ -25,10 +34,8 @@ services:
     image: nginx:alpine
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
     depends_on:
       - backend
       - frontend
@@ -36,3 +43,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:
