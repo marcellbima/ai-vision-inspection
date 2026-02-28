@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./hooks/useAuth";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
+import Inspection from "./pages/Inspection";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -18,7 +19,8 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />
-          <Route path="*" element={<Navigate to="/dashboard" />} />
+          <Route path="/inspection" element={<PrivateRoute><Inspection /></PrivateRoute>} />
+          <Route path="*" element={<Navigate to="/inspection" />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
