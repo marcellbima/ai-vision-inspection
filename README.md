@@ -1,56 +1,66 @@
 # 🔍 AI Vision Inspection System
 
-An automated visual inspection system using deep learning to detect product defects in manufacturing environments.
+> Realtime PCB defect detection using deep learning with GO/NG indicator
 
 ![Python](https://img.shields.io/badge/Python-3.10-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-green)
 ![React](https://img.shields.io/badge/React-18-cyan)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.3-red)
 ![Docker](https://img.shields.io/badge/Docker-Compose-blue)
-![CI/CD](https://img.shields.io/badge/CI/CD-GitHub_Actions-black)
+![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-black)
+![Domain](https://img.shields.io/badge/Production-app.mtechlabs.cloud-brightgreen)
+
+**Live Demo:** https://app.mtechlabs.cloud
 
 ---
 
 ## 📋 Overview
 
-AI Vision Inspection System is a production-ready web application that uses computer vision and deep learning (ResNet18 + PyTorch) to automatically detect defects in product images. Built for Quality Control operators in manufacturing environments.
+AI Vision Inspection System is a production-ready web application for automated PCB (Printed Circuit Board) defect detection. Using MobileNetV2 deep learning model, the system analyzes video streams in real-time and displays GO ✅ / NG ❌ indicators for quality control operators.
 
 ---
 
 ## 🏗️ Architecture
 ```
-Proxmox VM (Ubuntu Server)
-└── Docker Compose
-    ├── AI Service     → PyTorch + OpenCV (port 8001)
-    ├── Backend API    → FastAPI + PostgreSQL (port 8000)
-    ├── Frontend       → React + Vite + Tailwind (port 80)
-    ├── Database       → PostgreSQL 15
-    └── Nginx          → Reverse Proxy (port 80/443)
+Browser (Webcam/Video)
+        ↓ WebSocket (wss://)
+Cloudflare Tunnel (HTTPS)
+        ↓
+Ubuntu Server (Proxmox VM)
+        ↓
+Docker Compose
+├── AI Service     → MobileNetV2 + OpenCV (port 8001)
+├── Backend API    → FastAPI + PostgreSQL (port 8000)  
+├── Frontend       → React + Vite + Tailwind (port 80)
+├── Database       → PostgreSQL 15
+└── Nginx          → Reverse Proxy + WebSocket
 ```
 
 ---
 
-## 🛠️ Technology Stack
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |---|---|
-| AI/ML | PyTorch 2.3, OpenCV 4.9, ResNet18 |
+| AI/ML | PyTorch 2.3, OpenCV, MobileNetV2 |
 | Backend | FastAPI, SQLAlchemy, PostgreSQL, JWT |
-| Frontend | React 18, Vite, Tailwind CSS, Axios |
+| Frontend | React 18, Vite, Tailwind CSS v4 |
 | DevOps | Docker, Docker Compose, GitHub Actions |
-| Security | UFW, Fail2ban, JWT, RBAC, HTTPS |
 | Infrastructure | Proxmox, Ubuntu Server 24.04 |
+| Networking | Cloudflare Tunnel, Custom Domain |
 
 ---
 
 ## ✨ Features
 
-- 🤖 **AI Defect Detection** — ResNet18 CNN with transfer learning
+- 🎥 **Realtime Video Inspection** — Webcam & video file support
+- 🤖 **AI Defect Detection** — MobileNetV2 transfer learning
+- 🟢🔴 **GO/NG Indicator** — Instant visual feedback via WebSocket
+- 📊 **Inspection Counter** — Track GO/NG statistics per session
 - 🔐 **JWT Authentication** — Role-based access (Admin, Supervisor, Operator)
-- 📊 **Inspection Dashboard** — Upload images and get real-time results
-- 📜 **History Tracking** — Full audit trail of all inspections
+- 📜 **History Tracking** — Full audit trail
 - 🚀 **CI/CD Pipeline** — Auto-deploy on push via GitHub Actions
-- 🛡️ **Production Security** — UFW firewall, Fail2ban, encrypted passwords
+- 🌐 **Custom Domain** — HTTPS via Cloudflare Tunnel
 
 ---
 
@@ -58,7 +68,6 @@ Proxmox VM (Ubuntu Server)
 
 ### Prerequisites
 - Docker & Docker Compose
-- Python 3.10+
 - Node.js 20+
 
 ### Setup
@@ -69,87 +78,18 @@ cd ai-vision-inspection
 
 # Setup environment
 cp .env.example .env
-# Edit .env with your values
+nano .env  # Fill in DB_PASSWORD and SECRET_KEY
 
-# Run all services
+# Run
 docker compose up -d
 
-# Check status
-docker compose ps
+# Create admin user
+curl -X POST http://localhost/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","username":"admin","password":"password","role":"admin"}'
 ```
 
-API available at: `http://localhost/api/health`
-Frontend at: `http://localhost`
-
----
-
-## 📁 Project Structure
-```
-ai-vision-inspection/
-├── ai-service/          # PyTorch inference service
-│   ├── main.py
-│   ├── utils/
-│   │   ├── predictor.py
-│   │   └── preprocessor.py
-│   └── scripts/
-│       ├── train.py
-│       └── evaluate.py
-├── backend/             # FastAPI backend
-│   └── app/
-│       ├── api/         # Auth, Users, Inspections
-│       ├── core/        # Config, Security
-│       ├── db/          # Models, Database
-│       └── schemas/     # Pydantic schemas
-├── frontend/            # React dashboard
-│   └── src/
-│       ├── pages/       # Login, Dashboard, History
-│       ├── hooks/       # useAuth
-│       └── services/    # API client
-├── nginx/               # Reverse proxy config
-├── .github/workflows/   # CI/CD pipeline
-├── docker-compose.yml
-└── .env.example
-```
-
----
-
-## 🔐 Security
-
-- All secrets stored in environment variables
-- No credentials committed to repository
-- JWT tokens with expiry
-- Role-based access control (RBAC)
-- UFW firewall — only ports 22, 80, 443 open
-- Fail2ban — SSH brute force protection
-- Bcrypt password hashing
-
----
-
-## 🤖 AI Model
-
-- **Architecture:** ResNet18 (Transfer Learning)
-- **Task:** Binary classification (defect / no_defect)
-- **Input:** 224x224 RGB images
-- **Output:** Class label + confidence score
-- **Training:** ImageNet pretrained weights, fine-tuned on industrial dataset
-
-### Training
-```bash
-# Prepare dataset structure
-data/processed/
-├── train/
-│   ├── defect/
-│   └── no_defect/
-└── val/
-    ├── defect/
-    └── no_defect/
-
-# Run training
-docker compose run ai-service python scripts/train.py
-
-# Evaluate
-docker compose run ai-service python scripts/evaluate.py
-```
+Open: `http://localhost`
 
 ---
 
@@ -160,30 +100,48 @@ docker compose run ai-service python scripts/evaluate.py
 | POST | `/api/auth/register` | Register user |
 | POST | `/api/auth/login` | Login & get JWT |
 | GET | `/api/auth/me` | Current user |
-| POST | `/api/inspections/predict` | Upload & predict |
+| POST | `/api/inspections/predict` | Image inspection |
 | GET | `/api/inspections/history` | Inspection history |
-| GET | `/api/users/` | List users (admin) |
+| WS | `/ws/inspect` | Realtime video inspection |
 
-API Docs: `http://localhost/api/docs`
+API Docs: `https://app.mtechlabs.cloud/api/docs`
+
+---
+
+## 🤖 AI Model
+
+- **Architecture:** MobileNetV2 (Transfer Learning)
+- **Dataset:** PCB Defect Detection (Kaggle)
+- **Classes:** `defect` / `no_defect`
+- **Input:** 128x128 RGB images
+- **Defect Types:** Short, Open Circuit, Missing Hole, Mouse Bite, Spur, Spurious Copper
 
 ---
 
 ## ⚙️ CI/CD Pipeline
 ```
-Push to main
-     ↓
+Push to main branch
+        ↓
 GitHub Actions (self-hosted runner)
-     ↓
-git pull → docker compose build → docker compose up
-     ↓
-Production live
+        ↓
+docker compose build + up
+        ↓
+Health check /api/health
+        ↓
+Production live ✅
 ```
 
 ---
 
-## 📄 License
+## 🔐 Security
 
-MIT License — feel free to use for learning and portfolio purposes.
+- JWT tokens with expiry
+- Bcrypt password hashing
+- Role-based access control (RBAC)
+- UFW firewall (ports 22, 80, 443 only)
+- Fail2ban SSH protection
+- Cloudflare DDoS protection
+- No credentials in repository
 
 ---
 
@@ -191,3 +149,4 @@ MIT License — feel free to use for learning and portfolio purposes.
 
 **Marcell Bima**
 - GitHub: [@marcellbima](https://github.com/marcellbima)
+- Production: [app.mtechlabs.cloud](https://app.mtechlabs.cloud)

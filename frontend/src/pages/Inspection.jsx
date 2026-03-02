@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 
-const WS_URL = `ws://${window.location.host}/ws/inspect`;
+const WS_PROTOCOL = window.location.protocol === "https:" ? "wss:" : "ws:";
+const WS_URL = `${WS_PROTOCOL}//${window.location.host}/ws/inspect`;
 
 export default function Inspection() {
   const { user, logout }          = useAuth();

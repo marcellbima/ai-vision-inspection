@@ -2,12 +2,11 @@ name: Deploy to Production
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: self-hosted
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,7 +15,11 @@ jobs:
         run: |
           cd ~/ai-vision-inspection
           git pull origin main
-          docker compose down
-          docker compose build --no-cache
+          docker compose build frontend backend ai-service
           docker compose up -d
           docker compose ps
+
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f http://localhost/api/health

@@ -1,110 +1,85 @@
 import { useState, useRef } from "react";
-import { inspectionAPI } from "../services/api";
+import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 
 export default function Dashboard() {
-  const { user, logout }      = useAuth();
-  const [file, setFile]       = useState(null);
+  const { user, logout } = useAuth();
+  const [file, setFile]     = useState(null);
   const [preview, setPreview] = useState(null);
   const [result, setResult]   = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
-  const inputRef              = useRef();
+  const fileRef = useRef();
 
   const handleFile = (e) => {
     const f = e.target.files[0];
     if (!f) return;
     setFile(f);
-    setResult(null);
     setPreview(URL.createObjectURL(f));
+    setResult(null);
   };
 
-  const handlePredict = async () => {
+  const handleSubmit = async () => {
     if (!file) return;
     setLoading(true);
     setError("");
     try {
-      const res = await inspectionAPI.predict(file);
+      const form = new FormData();
+      form.append("file", file);
+      const res = await api.post("/inspections/predict", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       setResult(res.data);
-    } catch {
-      setError("Prediction failed. Please try again.");
+    } catch (err) {
+      setError(err.response?.data?.detail || "Inspection failed");
     } finally {
       setLoading(false);
     }
   };
 
-  const isDefect = result?.result === "defect";
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="bg-white shadow px-6 py-4 flex justify-between items-center">
-        <h1 className="text-lg font-bold text-primary">AI Vision Inspection</h1>
+    <div className="min-h-screen bg-gray-900 text-white">
+      <nav className="bg-gray-800 px-6 py-4 flex justify-between items-center">
+        <h1 className="text-lg font-bold text-blue-400">AI Vision Inspection</h1>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">{user?.username} ({user?.role})</span>
-          <button onClick={logout} className="text-sm text-red-500 hover:underline">Logout</button>
+          <span className="text-sm text-gray-300">{user?.username} ({user?.role})</span>
+          <a href="/inspection" className="text-sm text-green-400 hover:underline">Live Inspection</a>
+          <a href="/history" className="text-sm text-blue-400 hover:underline">History</a>
+          <button onClick={logout} className="text-sm text-red-400 hover:underline">Logout</button>
         </div>
       </nav>
-
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
-        {/* Upload Card */}
-        <div className="bg-white rounded-xl shadow p-6">
+      <div className="max-w-2xl mx-auto p-6">
+        <div className="bg-gray-800 rounded-xl p-6">
           <h2 className="text-lg font-semibold mb-4">Upload Image for Inspection</h2>
-
           <div
-            onClick={() => inputRef.current.click()}
-            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-primary transition"
+            onClick={() => fileRef.current.click()}
+            className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition"
           >
             {preview ? (
-              <img src={preview} alt="preview" className="max-h-64 mx-auto rounded" />
+              <img src={preview} alt="preview" className="max-h-48 mx-auto rounded" />
             ) : (
               <p className="text-gray-400">Click to upload image</p>
             )}
           </div>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
 
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFile}
-          />
+          {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
 
-          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+          {result && (
+            <div className={`mt-4 p-4 rounded-lg border ${result.result === "no_defect" ? "bg-green-900/50 border-green-500" : "bg-red-900/50 border-red-500"}`}>
+              <p className="text-lg font-bold">{result.result === "no_defect" ? "✅ GO - No Defect" : "❌ NG - Defect Detected"}</p>
+              <p className="text-sm text-gray-300 mt-1">Confidence: {(result.confidence * 100).toFixed(1)}%</p>
+            </div>
+          )}
 
           <button
-            onClick={handlePredict}
+            onClick={handleSubmit}
             disabled={!file || loading}
-            className="mt-4 w-full bg-primary text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 py-2 rounded-lg font-semibold transition"
           >
-            {loading ? "Analyzing..." : "Run Inspection"}
+            {loading ? "Processing..." : "Run Inspection"}
           </button>
         </div>
-
-        {/* Result Card */}
-        {result && (
-          <div className={`bg-white rounded-xl shadow p-6 border-l-4 ${isDefect ? "border-red-500" : "border-green-500"}`}>
-            <h2 className="text-lg font-semibold mb-4">Inspection Result</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Status</p>
-                <p className={`text-xl font-bold ${isDefect ? "text-red-600" : "text-green-600"}`}>
-                  {isDefect ? "⚠ DEFECT DETECTED" : "✓ NO DEFECT"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Confidence</p>
-                <p className="text-xl font-bold">{(result.confidence * 100).toFixed(1)}%</p>
-              </div>
-              {result.defect_type && (
-                <div>
-                  <p className="text-sm text-gray-500">Defect Type</p>
-                  <p className="font-medium">{result.defect_type}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
